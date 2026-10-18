@@ -102,7 +102,9 @@ namespace libomtnet
         YV12 = 0x32315659,
         UYVA = 0x41565955,
         P216 = 0x36313250,
-        PA16 = 0x36314150
+        PA16 = 0x36314150,
+        HEVC = 0x43564548, //OMT-HX: compressed HEVC access unit, passed through without decoding
+        H264 = 0x34363248 //OMT-HX: compressed H.264 access unit, passed through without decoding
     }
 
     public enum OMTPlatformType

@@ -763,7 +763,7 @@ namespace libomtnet
                         {
                             OMTLogging.Write("Frame dimensions invalid: " + frame.Width + "x" + frame.Height + " Stride: " + frame.Stride, "OMTSend.SendVideo");
                         }
-                    } else if (frame.Codec == (int)OMTCodec.VMX1)
+                    } else if (frame.Codec == (int)OMTCodec.VMX1 || frame.Codec == (int)OMTCodec.HEVC || frame.Codec == (int)OMTCodec.H264)
                     {
                         if (frame.DataLength > 0)
                         {
@@ -775,7 +775,7 @@ namespace libomtnet
                             {
                                 Marshal.Copy(frame.FrameMetadata, tempVideo.Data.Buffer,frame.DataLength, frame.FrameMetadataLength);
                             }
-                            tempVideo.ConfigureVideo((int)OMTCodec.VMX1, frame.Width, frame.Height, frame.FrameRateN, frame.FrameRateD, frame.AspectRatio, frame.Flags, frame.ColorSpace);
+                            tempVideo.ConfigureVideo(frame.Codec, frame.Width, frame.Height, frame.FrameRateN, frame.FrameRateD, frame.AspectRatio, frame.Flags, frame.ColorSpace);
                             videoClock.Process(ref frame);
                             tempVideo.Timestamp = frame.Timestamp;
                             return Send(tempVideo);

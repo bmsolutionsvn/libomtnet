@@ -780,6 +780,33 @@ namespace libomtnet
             {
                 if (Exiting) return false;
                 OMTVideoHeader header = frame.GetVideoHeader();
+                if (header.Codec == (int)OMTCodec.HEVC || header.Codec == (int)OMTCodec.H264)
+                {
+                    //OMT-HX: hand the compressed frame to the caller. Decoding is the caller's job.
+                    int hxLength = frame.Data.Length - frame.MetadataLength;
+                    if (tempCompressedVideo == IntPtr.Zero)
+                    {
+                        tempCompressedVideo = Marshal.AllocHGlobal(OMTConstants.VIDEO_MAX_SIZE);
+                    }
+                    Marshal.Copy(frame.Data.Buffer, 0, tempCompressedVideo, hxLength);
+                    videoFrame.Type = OMTFrameType.Video;
+                    videoFrame.Codec = header.Codec;
+                    videoFrame.Timestamp = frame.Timestamp;
+                    videoFrame.Width = header.Width;
+                    videoFrame.Height = header.Height;
+                    videoFrame.Data = IntPtr.Zero;
+                    videoFrame.DataLength = 0;
+                    videoFrame.Stride = 0;
+                    videoFrame.CompressedData = tempCompressedVideo;
+                    videoFrame.CompressedLength = hxLength;
+                    videoFrame.Flags = (OMTVideoFlags)header.Flags;
+                    videoFrame.ColorSpace = (OMTColorSpace)header.ColorSpace;
+                    videoFrame.AspectRatio = header.AspectRatio;
+                    videoFrame.FrameRateN = header.FrameRateN;
+                    videoFrame.FrameRateD = header.FrameRateD;
+                    ReceiveFrameMetadata(frame, ref tempMetaVideo, ref videoFrame);
+                    return true;
+                }
                 if (header.Codec == (int)OMTCodec.VMX1)
                 {
                     OMTVideoFlags flags = (OMTVideoFlags)header.Flags;
