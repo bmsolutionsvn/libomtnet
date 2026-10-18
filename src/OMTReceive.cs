@@ -784,6 +784,12 @@ namespace libomtnet
                 {
                     //OMT-HX: hand the compressed frame to the caller. Decoding is the caller's job.
                     int hxLength = frame.Data.Length - frame.MetadataLength;
+                    //Both lengths come off the wire: drop a frame whose payload does not fit the buffer below
+                    if (hxLength <= 0 || hxLength > OMTConstants.VIDEO_MAX_SIZE || hxLength > frame.Data.Buffer.Length)
+                    {
+                        OMTLogging.Write("Invalid compressed frame length: " + hxLength, "OMTReceive.ReceiveVideo");
+                        return false;
+                    }
                     if (tempCompressedVideo == IntPtr.Zero)
                     {
                         tempCompressedVideo = Marshal.AllocHGlobal(OMTConstants.VIDEO_MAX_SIZE);
