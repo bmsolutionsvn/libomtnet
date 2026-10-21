@@ -56,6 +56,11 @@ namespace libomtnet
         private string senderInfoXml = null;
         private List<string> connectionMetadata = new List<string>();
 
+        //OMT-HX: an HX source may also send a smaller stream for preview receivers, its frames flagged Preview.
+        //While it does, its full stream skips them; otherwise they get the full stream, as before.
+        private long lastHxPreview = long.MinValue / 2;
+        private const long HX_PREVIEW_HOLD = 10000000; //1 second, in DateTime ticks
+
         private OMTClock videoClock;
         private OMTClock audioClock;
 
@@ -339,6 +344,22 @@ namespace libomtnet
         /// <summary>
         /// Total number of connections to this sender. Receivers establish one connection for video/metadata and a second for audio.
         /// </summary>
+        /// <summary>
+        /// Number of video receivers that asked for a preview feed only (OMT-HX).
+        /// </summary>
+        public int PreviewConnections { get {
+                int n = 0;
+                OMTChannel[] ch = channels;
+                if (ch != null)
+                {
+                    foreach (OMTChannel c in ch)
+                    {
+                        if (c.Connected && c.IsVideo() && c.Preview) n++;
+                    }
+                }
+                return n;
+            } }
+
         public int Connections { get { 
                 
                 OMTChannel[] ch = channels;
@@ -484,11 +505,31 @@ namespace libomtnet
         {
             int len = 0;
             OMTQuality suggested = OMTQuality.Default;
+            //OMT-HX: 1 for a full HX frame while a preview stream runs, 2 for a preview HX frame
+            int hx = 0;
+            if (frame.FrameType == OMTFrameType.Video)
+            {
+                OMTVideoHeader h = frame.GetVideoHeader();
+                if (h.Codec == (int)OMTCodec.HEVC || h.Codec == (int)OMTCodec.H264)
+                {
+                    long now = DateTime.UtcNow.Ticks;
+                    if ((h.Flags & (int)OMTVideoFlags.Preview) != 0)
+                    {
+                        hx = 2;
+                        lastHxPreview = now;
+                    }
+                    else if (now - lastHxPreview < HX_PREVIEW_HOLD)
+                    {
+                        hx = 1;
+                    }
+                }
+            }
             OMTChannel[] channels = this.channels;
             if (channels != null)
             {
                 for (int i = 0; i < channels.Length; i++)
                 {
+                    if (hx != 0 && channels[i].Preview != (hx == 2)) continue;
                     if (channels[i].Connected)
                     {
                         len += channels[i].Send(frame);

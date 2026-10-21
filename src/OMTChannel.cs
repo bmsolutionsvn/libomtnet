@@ -137,6 +137,7 @@ namespace libomtnet
         }
 
         public OMTQuality SuggestedQuality {  get {  return suggestedQuality; } }       
+        public bool Preview { get { return preview; } }
         public OMTSenderInfo SenderInformation { get {  return senderInfo; } }
 
         public bool Connected { get {
