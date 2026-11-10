@@ -347,18 +347,27 @@ namespace libomtnet
         /// <summary>
         /// Number of video receivers that asked for a preview feed only (OMT-HX).
         /// </summary>
-        public int PreviewConnections { get {
-                int n = 0;
-                OMTChannel[] ch = channels;
-                if (ch != null)
+        public int PreviewConnections { get { return VideoConnections(true); } }
+
+        /// <summary>
+        /// Number of video receivers that take the full feed (OMT-HX). An HX source with preview receivers and none
+        /// of these skips coding its full stream, which would go to nobody.
+        /// </summary>
+        public int FullConnections { get { return VideoConnections(false); } }
+
+        private int VideoConnections(bool preview)
+        {
+            int n = 0;
+            OMTChannel[] ch = channels;
+            if (ch != null)
+            {
+                foreach (OMTChannel c in ch)
                 {
-                    foreach (OMTChannel c in ch)
-                    {
-                        if (c.Connected && c.IsVideo() && c.Preview) n++;
-                    }
+                    if (c.Connected && c.IsVideo() && c.Preview == preview) n++;
                 }
-                return n;
-            } }
+            }
+            return n;
+        }
 
         public int Connections { get { 
                 
