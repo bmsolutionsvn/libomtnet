@@ -482,6 +482,40 @@ namespace libomtnet
                                                 statistics.Frames += 1;
                                                 statistics.FramesSinceLast += 1;
                                             }
+                                            else if (pendingFrame.FrameType == OMTFrameType.Video)
+                                            {
+                                                // The consumer is behind. Drop the oldest waiting picture rather than the
+                                                // newest: the newest may be the keyframe a request just produced, and losing
+                                                // that one freezes the receiver until the next request.
+                                                OMTFrame stale = null;
+                                                lock (readyFrames)
+                                                {
+                                                    if (readyFrames.Count > 0)
+                                                    {
+                                                        stale = readyFrames.Dequeue();
+                                                    }
+                                                }
+                                                if (stale != null)
+                                                {
+                                                    framePool.Return(stale);
+                                                    lock (readyFrames)
+                                                    {
+                                                        readyFrames.Enqueue(pendingFrame);
+                                                    }
+                                                    pendingFrame = null;
+                                                    if (frameReadyEvent != null)
+                                                    {
+                                                        frameReadyEvent.Set();
+                                                    }
+                                                    statistics.FramesDropped += 1;
+                                                    Debug.WriteLine("Receive.DroppedOldestFrame: Ready " + readyFrames.Count);
+                                                }
+                                                else
+                                                {
+                                                    statistics.FramesDropped += 1;
+                                                    Debug.WriteLine("Receive.DroppedFrame: Ready " + readyFrames.Count);
+                                                }
+                                            }
                                             else
                                             {
                                                 statistics.FramesDropped += 1;

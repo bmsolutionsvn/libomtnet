@@ -51,7 +51,10 @@ namespace libomtnet
         public static int NETWORK_ASYNC_COUNT_META_ONLY = 64;
         public static int NETWORK_ASYNC_BUFFER_META_ONLY = 1024;
 
-        public static int VIDEO_FRAME_POOL_COUNT = 4;
+        // 4 was too shallow for 4K60: one slow decode (a keyframe) or a TCP burst pushed a frame out, which the
+        // receiver sees as a lost picture and answers with a keyframe request. 12 frames (~0.2 s at 60 fps) absorbs
+        // both, and the channel drops the oldest first, so a backlog never adds more than that.
+        public static int VIDEO_FRAME_POOL_COUNT = 12;
 
         public static int VIDEO_MIN_SIZE = 65536;
         public static int VIDEO_MAX_SIZE = 10485760;
